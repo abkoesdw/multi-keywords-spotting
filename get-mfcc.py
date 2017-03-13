@@ -3,9 +3,9 @@ import os
 import numpy as np
 import glob
 
-path_txt = "/home/abkoesdw/Documents/cognitech/keyword-project/mfctxt-files-arief/"
-path_label = "/home/abkoesdw/Documents/cognitech/keyword-project/"
-path_mfcc = "/home/abkoesdw/Documents/cognitech/keyword-project/mfcc_new/"
+path_txt = "./data/econom/"
+path_label = "./data/econom/"
+path_mfcc = "./data/econom/feature/"
 
 if not os.path.exists(path_mfcc):
     os.makedirs(path_mfcc)
