@@ -2,8 +2,8 @@ import numpy as np
 import glob
 import os
 
-path_txt = "./data/world/"
-path_label = "./data/world/feature/"
+path_txt = "./data/us/"
+path_label = "./data/us/feature/"
 if not os.path.exists(path_label):
     os.makedirs(path_label)
 label_files = glob.glob(path_txt + "*.mfl")
@@ -14,7 +14,7 @@ with open(path_label + label_class, 'wb') as label_filename:
         label_data = open(label_file, 'r')
         flag_kw = 0
         flag_frame = 0
-        label_info_temp = np.empty((0, 3))
+        label_info_temp = np.empty((0, 4))
 
         label_name = label_file.split('/')[-1][8:-4][0:6]
         for line_ in label_data:
@@ -32,13 +32,17 @@ with open(path_label + label_class, 'wb') as label_filename:
 
             if len(line_) == 5:
                 word = line_[-1]
-                if label_name in word:
-                    line__ = line_
-                    start_frame = np.int(line__[0])
+                if 'u' == word or 's' == word:
+                    start_frame = np.int(line_[0])
+                    keyword = word
                     print("keyword: ", word)
                     print("start frame: ", start_frame)
                     flag_kw = 1
-                    line_prev = line__
+                    line_prev = line_
+                    if word == 'u':
+                        prev_word = word
+                        start_frame_prev = start_frame
+                    word_now = word
                     continue
 
             if flag_kw:
@@ -48,13 +52,26 @@ with open(path_label + label_class, 'wb') as label_filename:
                     line_prev = line_now
                 else:
                     line_now = line_prev2
-                    # print(np.int(round(np.float(line_now[1]))))
                     end_frame = np.int(round(np.float(line_now[1])))
-                    print("end frame: ", end_frame)
-                    print(np.array([filename_, start_frame, end_frame]).reshape(1, 3).shape)
+                    if word_now == 's' and prev_word == 'u':
+                        start_frame = start_frame_prev
+                        kword = 'us'
+                        prev_word = 'X'
+                        print("end frame: ", end_frame)
+                    elif word_now == 's' and prev_word != 'u':
+                        kword = 's'
+                        prev_word = 'X'
+                        print("end frame: ", end_frame)
+                    else:
+                        kword = 'u'
+                        prev_word = 'X'
+                        print("end frame: ", end_frame)
+
+                    print(np.array([filename_, kword, start_frame, end_frame]).reshape(1, 4).shape)
                     label_info_temp = np.concatenate((label_info_temp,
-                                                      np.array([filename_, start_frame,
-                                                                end_frame]).reshape(1, 3)), axis=0)
+                                                      np.array([filename_, kword, start_frame, end_frame]).reshape(1, 4)),
+                                                     axis=0)
+
                     flag_kw = 0
 
             if len(line_) == 1 and 'data' not in line_temp:
@@ -72,4 +89,4 @@ with open(path_label + label_class, 'wb') as label_filename:
                 label_info = np.concatenate((label_info_temp, np.tile(frame_length, (num_kw, 1))), axis=1)
                 np.savetxt(label_filename, label_info, delimiter=',', fmt='%s')
                 flag_frame = 0
-                label_info_temp = np.empty((0, 3))
+                label_info_temp = np.empty((0, 4))
