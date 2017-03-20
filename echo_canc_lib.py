@@ -224,15 +224,12 @@ def get_feature_new(mfcc_feat, left_context, right_context):
 
 def get_label_new(start_frame, end_frame, total_frame, left_context, right_context):
     label = np.zeros((int(total_frame), 1))
-    label[int(start_frame):int(end_frame)+1] = 1
+    for i in range(len(start_frame)):
+        label[int(start_frame[i]):int(end_frame[i])+1] = 1
     label = label[4:-right_context]
 
     return label
 
-def get_label_new2(label, start_frame, end_frame):
-    label[int(start_frame):int(end_frame)+1] = 1
-
-    return label
 
 def get_label(feature, keyword, start_frame, end_frame):
     num_feat, num_frames = feature.shape

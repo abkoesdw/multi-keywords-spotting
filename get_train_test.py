@@ -4,13 +4,9 @@ import glob
 import echo_canc_lib as ec
 
 label = 'econom/'
-path_txt = "./data/" + label
 path_label = "./data/" + label + "label/"
 path_mfcc = "./data/" + label + "feature/"
-
-# path_label = "/home/abkoesdw/Documents/cognitech/keyword-project/"
-# path_mfcc = "/home/abkoesdw/Documents/cognitech/keyword-project/mfcc_new/"
-# path_feature = "/home/abkoesdw/Documents/cognitech/keyword-project/test-new/"
+path_feature = "./data/" + label + "feature/final/"
 
 left_context = 3
 right_context = 3
@@ -20,8 +16,8 @@ label_train = np.empty((0, 1))
 label_test = np.empty((0, 1))
 id_test = np.empty((0, 1))
 filename_test = []
-
-with open(path_label + label[0:-1]) as f:
+print(path_label + label[0:-1] + '_refined')
+with open(path_label + label[0:-1] + '_refined') as f:
     k = 1
     prev_file = '__'
     prev_label = []
@@ -34,11 +30,19 @@ with open(path_label + label[0:-1]) as f:
             test = 0
             train = 1
 
-        filename = line.split(',')[0]
+        line_split = line.split(',')
+        filename = line_split[0]
         print('processing: ', filename, '...')
-        start_frame = line.split(',')[1]
-        end_frame = line.split(',')[2]
-        total_frame = line.split(',')[3]
+        start_frame = {}
+        end_frame = {}
+        m = 1
+        for j in range(int(len(line_split)/2 - 1)):
+            start_frame[j] = line_split[m]
+            end_frame[j] = line_split[m + 1]
+            m += 2
+
+        total_frame = line_split[-1]
+
         with open(path_mfcc + filename, 'r') as f:
             lines = f.readlines()
             rows = [line.split() for line in lines]
@@ -53,26 +57,13 @@ with open(path_label + label[0:-1]) as f:
         if num_data != total_frame:
             print('something is wrong!!!')
             break
-        filename_temp = filename.split('_')
-        filename_orig = filename_temp[0:-1]
 
-        if filename_orig != prev_file:
-            feature_temp = ec.get_feature_new(mfcc_, left_context, right_context)
-            label_temp = ec.get_label_new(start_frame, end_frame, total_frame, left_context, right_context)
-        else:
-            feature_temp = prev_feat
-            label_temp = ec.get_label_new2(prev_label, start_frame, end_frame)
-            flag_double = 1
-        prev_feat = feature_temp
-        prev_label = label_temp
-        prev_file = filename_orig
-        print(feature_temp.shape, label_temp.shape)
+        feature_temp = ec.get_feature_new(mfcc_, left_context, right_context)
+        label_temp = ec.get_label_new(start_frame, end_frame, total_frame, left_context, right_context)
+
         if train:
-            if not flag_double:
-                feature_train = np.concatenate((feature_train, feature_temp), axis=0)
-                label_train = np.concatenate((label_train, label_temp), axis=0)
-            else:
-                feature_train = prev_feat
+            feature_train = np.concatenate((feature_train, feature_temp), axis=0)
+            label_train = np.concatenate((label_train, label_temp), axis=0)
         elif test:
             feature_test = np.concatenate((feature_test, feature_temp), axis=0)
             label_test = np.concatenate((label_test, label_temp), axis=0)
@@ -84,12 +75,13 @@ with open(path_label + label[0:-1]) as f:
             filename_test = np.append(filename_test, filename)
 
         k += 1
+        # if k >= 2000:
+        #     break
 
-    np.savez(path_mfcc + label[0:-1] + '_features.npz', feature_train=feature_train, label_train=label_train,
+    if not os.path.exists(path_feature):
+        os.makedirs(path_feature)
+
+    np.savez(path_feature + label[0:-1] + '.npz', feature_train=feature_train, label_train=label_train,
              feature_test=feature_test, label_test=label_test, id_test=id_test,
              filename_test=filename_test)
-# print('total files:', k-1)
-# print(feature_train.shape, label_train.shape)
-# print(feature_test.shape, label_test.shape)
-# print(id_test.shape, id_test[0], id_test[-1])
-# print(filename_test)
+
