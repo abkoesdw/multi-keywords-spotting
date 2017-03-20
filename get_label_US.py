@@ -3,7 +3,7 @@ import glob
 import os
 
 path_txt = "./data/us/"
-path_label = "./data/us/feature/"
+path_label = "./data/us/label/"
 if not os.path.exists(path_label):
     os.makedirs(path_label)
 label_files = glob.glob(path_txt + "*.mfl")

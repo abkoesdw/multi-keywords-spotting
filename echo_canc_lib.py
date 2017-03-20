@@ -229,6 +229,11 @@ def get_label_new(start_frame, end_frame, total_frame, left_context, right_conte
 
     return label
 
+def get_label_new2(label, start_frame, end_frame):
+    label[int(start_frame):int(end_frame)+1] = 1
+
+    return label
+
 def get_label(feature, keyword, start_frame, end_frame):
     num_feat, num_frames = feature.shape
 

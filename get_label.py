@@ -2,12 +2,15 @@ import numpy as np
 import glob
 import os
 
-path_txt = "./data/world/"
-path_label = "./data/world/feature/"
+label = 'econom/'
+path_txt = "./data/" + label
+path_label = "./data/" + label + "label/"
+
 if not os.path.exists(path_label):
     os.makedirs(path_label)
 label_files = glob.glob(path_txt + "*.mfl")
 label_class = path_txt.split('/')[-2]
+
 file_id = 0
 with open(path_label + label_class, 'wb') as label_filename:
     for label_file in label_files:
@@ -16,13 +19,15 @@ with open(path_label + label_class, 'wb') as label_filename:
         flag_frame = 0
         label_info_temp = np.empty((0, 3))
 
-        label_name = label_file.split('/')[-1][8:-4][0:6]
+        label_name = path_txt.split('/')[-2]
         for line_ in label_data:
             line_temp = line_
             line_ = line_.split()
             line_ = np.asarray(line_)
 
             if line_temp[1:5] == 'data':
+                if file_id >= 2000:
+                    break
                 file_id += 1
                 filename_ = line_temp
                 filename_ = filename_.split('/')[-1:][0]
