@@ -32,7 +32,7 @@ with open(path_label + label[0:-1] + '_refined') as f:
 
         line_split = line.split(',')
         filename = line_split[0]
-        print('processing: ', filename, '...')
+
         start_frame = {}
         end_frame = {}
         m = 1
@@ -62,6 +62,7 @@ with open(path_label + label[0:-1] + '_refined') as f:
         if len(start_frame) == 0:
             continue
         else:
+            print('processing: ', filename, '...')
             k += 1
 
         feature_temp = ec.get_feature_new(mfcc_, left_context, right_context)
@@ -80,7 +81,7 @@ with open(path_label + label[0:-1] + '_refined') as f:
             id_test = np.concatenate((id_test, id_test_temp), axis=0)
             filename_test = np.append(filename_test, filename)
 
-        if k >= 2000:
+        if k > 2000:
             break
 
     if not os.path.exists(path_feature):

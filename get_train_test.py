@@ -3,7 +3,7 @@ import numpy as np
 import glob
 import echo_canc_lib as ec
 
-label = 'econom/'
+label = 'scien/'
 path_label = "./data/" + label + "label/"
 path_mfcc = "./data/" + label + "feature/"
 path_feature = "./data/" + label + "feature/final/"
@@ -51,6 +51,7 @@ with open(path_label + label[0:-1] + '_refined') as f:
         num_data, num_feat = np.shape(mfcc_)
         num_data = int(num_data)
         total_frame = int(total_frame)
+
         if num_data != total_frame:
             total_frame = num_data
 
@@ -75,8 +76,8 @@ with open(path_label + label[0:-1] + '_refined') as f:
             filename_test = np.append(filename_test, filename)
 
         k += 1
-        # if k >= 2000:
-        #     break
+        if k >= 2000:
+            break
 
     if not os.path.exists(path_feature):
         os.makedirs(path_feature)
