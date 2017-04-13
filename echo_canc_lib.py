@@ -221,14 +221,72 @@ def get_feature_new(mfcc_feat, left_context, right_context):
 
     return feature.T
 
+def get_feature_multi(mfcc_feat, left_context, right_context):
+    num_frames, num_cep = mfcc_feat.shape
+    feature = np.empty((num_cep*(left_context+right_context+1), 0))
+    for j in range(4, num_frames-right_context):
+        current_frame = mfcc_feat[j, :].reshape(num_cep, 1)
+        left_frame = mfcc_feat[j-3:j, :].reshape(num_cep*left_context, 1)
+        right_frame = mfcc_feat[j+1:j+1+right_context, :].reshape(num_cep*right_context, 1)
+        total_frame = np.concatenate((current_frame, left_frame, right_frame), axis=0)
+        feature = np.concatenate((feature, total_frame), axis=1)
+
+    return feature.T
+
 
 def get_label_new(start_frame, end_frame, total_frame, left_context, right_context):
+
     label = np.zeros((int(total_frame), 1))
     for i in range(len(start_frame)):
         label[int(start_frame[i]):int(end_frame[i])+1] = 1
     label = label[4:-right_context]
 
     return label
+
+
+def get_label_multi(line_split, total_frame, right_context):
+    labels = ['econom', 'financ', 'movie', 'music', 'news', 'resume', 'scien',
+              'sport', 'stop', 'world', 'us']
+    num_frames = total_frame
+    target_temp = np.zeros((1, num_frames))
+    start_frame = 0
+    end_frame = 0
+    flag_music = 0
+    for k in range(1, len(line_split), 3):
+        label_val = 1
+        for label in labels:
+            if label in line_split[k] and label is not "us":
+                start_frame = line_split[k + 1]
+                end_frame = line_split[k + 2]
+                target_temp[0, int(start_frame):int(end_frame) + 1] = int(label_val)
+
+            elif label == line_split[k] and label is "us":
+                start_frame = line_split[k + 1]
+                end_frame = line_split[k + 2]
+                target_temp[0, int(start_frame):int(end_frame) + 1] = int(label_val)
+
+            label_val += 1
+
+    target = target_temp[0, 4:-right_context]
+
+    return np.int16(target)
+
+
+def get_label_multi_prev(keyword, start_frame, end_frame, right_context, prev_label):
+    labels = ['econom', 'financ', 'movie', 'music', 'news', 'resume', 'scien',
+              'sport', 'stop', 'world', 'us']
+    m = 1
+    label_val = 0
+    for label_item in labels:
+        if label_item in keyword:
+            label_val = m
+        m += 1
+    label = prev_label
+    label[int(start_frame):int(end_frame)+1] = int(label_val)
+    label_prev = label
+    label_final = label[4:-right_context]
+
+    return np.int16(label_final), np.int16(label_prev)
 
 
 def get_label(feature, keyword, start_frame, end_frame):

@@ -3,11 +3,11 @@ import numpy as np
 import glob
 import echo_canc_lib as ec
 
-label = 'world/'
-path_label = "./data/" + label + "label/"
-path_mfcc = "./data/" + label + "feature/"
-path_feature = "./data/" + label + "feature/final/"
-
+path_label = "./data/multi-label/"
+path_mfcc = "./data/multi-mfcc/"
+path_feature = "./data/multi-feature/"
+labels = ['econom', 'financ', 'movie', 'music', 'news', 'resume', 'scien',
+          'sport', 'stop', 'world', 'us']
 left_context = 3
 right_context = 3
 feature_train = np.empty((0, 39*(left_context + right_context + 1)))
@@ -16,12 +16,14 @@ label_train = np.empty((0, 1))
 label_test = np.empty((0, 1))
 id_test = np.empty((0, 1))
 filename_test = []
-print(path_label + label[0:-1] + '_refined')
-with open(path_label + label[0:-1] + '_refined') as f:
+
+with open(path_label + 'multi-label_refined') as f:
     k = 1
     prev_file = '__'
     prev_label = []
     prev_feat = []
+    flag_count = 0
+    label_count = np.zeros(len(labels))
     for line in f:
         if np.mod(k, 10) == 0:
             test = 1
@@ -31,17 +33,28 @@ with open(path_label + label[0:-1] + '_refined') as f:
             train = 1
 
         line_split = line.split(',')
-        filename = line_split[0]
+        filename_temp = line_split[0]
+        filename_temp = filename_temp.split('_')
+        s = '_'
+        filename = s.join(filename_temp[:-1])
         print('processing: ', filename, '...')
-        start_frame = {}
-        end_frame = {}
-        m = 1
-        for j in range(int(len(line_split)/2 - 1)):
-            start_frame[j] = line_split[m]
-            end_frame[j] = line_split[m + 1]
-            m += 2
+        keyword = line_split[1]
+        m = 0
+        for label_item in labels:
+            if label_item in keyword:
+                if label_count[m] > 100:
+                    flag_count = 1
+                else:
+                    label_count[m] += 1
+            m += 1
 
-        total_frame = line_split[-1]
+        if flag_count:
+            flag_count = 0
+            continue
+
+        start_frame = line_split[2]
+        end_frame = line_split[3]
+        total_frame = line_split[4]
 
         with open(path_mfcc + filename, 'r') as f:
             lines = f.readlines()
@@ -60,7 +73,14 @@ with open(path_label + label[0:-1] + '_refined') as f:
             break
 
         feature_temp = ec.get_feature_new(mfcc_, left_context, right_context)
-        label_temp = ec.get_label_new(start_frame, end_frame, total_frame, left_context, right_context)
+
+        if filename == prev_file:
+            label_temp = ec.get_label_multi_prev(keyword, start_frame, end_frame, right_context, prev_label)
+            prev_file = filename
+        else:
+            label_temp = ec.get_label_multi(keyword, start_frame, end_frame, total_frame, right_context)
+            prev_label = label_temp
+            prev_file = filename
 
         if train:
             feature_train = np.concatenate((feature_train, feature_temp), axis=0)
@@ -76,13 +96,14 @@ with open(path_label + label[0:-1] + '_refined') as f:
             filename_test = np.append(filename_test, filename)
 
         k += 1
-        if k >= 2000:
+        if label_count.all() == 100:
             break
 
     if not os.path.exists(path_feature):
         os.makedirs(path_feature)
 
-    np.savez(path_feature + label[0:-1] + '.npz', feature_train=feature_train, label_train=label_train,
+    np.savez(path_feature + 'feature_final.npz', feature_train=feature_train, label_train=label_train,
              feature_test=feature_test, label_test=label_test, id_test=id_test,
              filename_test=filename_test)
+print(label_count)
 
