@@ -4,7 +4,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout
 import time
 from sklearn.metrics import confusion_matrix, classification_report
-from keras.callbacks import EarlyStopping, ModelCheckpoint, LearningRateScheduler
+from keras.callbacks import EarlyStopping, ModelCheckpoint, LearningRateScheduler, TensorBoard
 from keras.optimizers import SGD
 from keras.utils.np_utils import to_categorical
 import h5py
@@ -38,12 +38,12 @@ X_test = bcolz.open("./data/multi-feature/test_bcolz/feature_test.bc", mode='r')
 # print(np.unique(Y_train), np.unique(Y_test))
 num_test, __ = X_test.shape
 # batch_size = 1200
-batch_size = X_train.chunklen * 1000
+batch_size = X_train.chunklen * 1
 batches_train = bci.BcolzArrayIterator(X_train, Y_train, batch_size=batch_size, shuffle=True)
 batches_test = bci.BcolzArrayIterator(X_test, Y_test, batch_size=batch_size, shuffle=True)
 
 init = 'uniform'
-neurons = 150
+neurons = 100
 drop_out = 0.1
 model = Sequential()
 model.add(Dense(neurons, input_dim=273, kernel_initializer=init, activation='relu'))
@@ -65,13 +65,14 @@ model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy
 nb_epoch = 200
 
 stopper = EarlyStopping(monitor='val_loss', min_delta=0.0, patience=6, verbose=0, mode='auto')
-#
+tensorboard = TensorBoard(log_dir='./Graph', histogram_freq=0,
+                          write_graph=True, write_images=True)
 filepath = (path_model + "model.best.hdf5")
 checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 # model.fit(X_train, Y_train, validation_data=(X_test, Y_test), epochs=nb_epoch, batch_size=batch_size, shuffle=True,
 #           verbose=2, callbacks=[stopper, checkpoint])
 model.fit_generator(batches_train, steps_per_epoch=num_train/batch_size, epochs=nb_epoch,
-                    verbose=2, callbacks=[stopper, checkpoint],
+                    verbose=2, callbacks=[stopper, checkpoint, tensorboard],
                     validation_data=batches_test, validation_steps=num_test/batch_size)
 
 model.load_weights(filepath)
